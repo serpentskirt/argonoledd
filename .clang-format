@@ -1,0 +1,25 @@
+UseTab: Never
+IndentWidth: 4
+TabWidth: 4
+ColumnLimit: 100
+
+BreakBeforeBraces: Allman
+BreakBeforeBinaryOperators: NonAssignment
+AlignOperands: Align
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+SpaceBeforeParens: ControlStatements
+IndentCaseLabels: true
+SortIncludes: true
+
+KeepEmptyLines:
+  AtEndOfFile: true
+  AtStartOfBlock: false
+MaxEmptyLinesToKeep: 1
+
+AlignConsecutiveMacros: true

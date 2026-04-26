@@ -1,0 +1,17 @@
+[Unit]
+Description=OLED display daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/argonoledd
+WorkingDirectory=/usr/local/share/argonoledd
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=15
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,105 @@
+#!/bin/bash
+# argonoledd installer - build and install the OLED display daemon
+
+BOLD="\e[1m"
+RED="\e[31;1m"
+GREEN="\e[32;1m"
+YELLOW="\e[33;1m"
+RESET="\e[0m"
+
+ok()   { echo -e "  ${GREEN}OK${RESET}      $*"; }
+warn() { echo -e "  ${YELLOW}WARNING${RESET} $*"; }
+fail() { echo -e "  ${RED}ERROR${RESET}   $*"; }
+
+echo -e "${BOLD}argonoledd - Argon OLED display daemon installer${RESET}"
+echo "____________________________________________"
+
+# --- Dependency checks ---
+echo -e "\n${BOLD}Checking dependencies...${RESET}"
+
+MISSING=0
+
+check_cmd()
+{
+    printf "  %-12s " "$1 :"
+
+    if command -v "$1" >/dev/null 2>&1; then
+        echo -e "${GREEN}OK${RESET}"
+    else
+        echo -e "${RED}NOT FOUND${RESET}"
+        MISSING=$((MISSING + 1))
+    fi
+}
+
+check_cmd gcc
+check_cmd make
+
+# python3 is optional but useful for socket testing
+printf "  %-12s " "python3 :"
+if command -v python3 >/dev/null 2>&1; then
+    echo -e "${GREEN}OK${RESET}"
+else
+    echo -e "${YELLOW}NOT FOUND${RESET} (optional - install for socket testing)"
+fi
+
+if [ $MISSING -ne 0 ]; then
+    fail "Missing $MISSING required tool(s). Install them and re-run."
+    echo "  On Debian/Ubuntu/Raspbian: sudo apt install gcc make"
+
+    exit 1
+fi
+
+# --- Optional: I2C bus ---
+echo -e "\n${BOLD}Checking hardware...${RESET}"
+printf "  %-12s " "I2C bus :"
+
+if [ -c /dev/i2c-1 ]; then
+    echo -e "${GREEN}ENABLED${RESET}"
+else
+    echo -e "${YELLOW}NOT FOUND${RESET}"
+    warn "/dev/i2c-1 missing - enable I2C via raspi-config"
+fi
+
+# --- Build ---
+echo -e "\n${BOLD}Building...${RESET}"
+make clean && make
+
+if [ $? -ne 0 ]; then
+    fail "Build failed."
+
+    exit 1
+fi
+
+ok "Build successful."
+
+# --- Install ---
+echo -e "\n${BOLD}Installing...${RESET}"
+
+if [ "$EUID" -ne 0 ]; then
+    sudo make install
+else
+    make install
+fi
+
+if [ $? -ne 0 ]; then
+    fail "Install failed."
+
+    exit 1
+fi
+
+echo ""
+echo -e "${GREEN}${BOLD}Done.${RESET}"
+echo ""
+echo "  Binary  : /usr/local/sbin/argonoledd"
+echo "  Assets  : /usr/local/share/argonoledd/res/"
+echo "  Config  : /etc/argonoledd.conf"
+echo "  Service : systemctl status argonoledd"
+echo "  Logs    : journalctl -u argonoledd -f"
+echo ""
+echo "  Edit /etc/argonoledd.conf to change screen order and timing."
+echo "  Run 'sudo make uninstall' to remove."
+echo ""
+echo "  To send socket commands as a non-root user:"
+echo "    sudo usermod -aG argonoledd \$USER"
+echo "  Then log out and back in, or run: newgrp argonoledd"
+echo "  Test with: python3 -c 'import socket; s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM); s.connect(\"/run/argonoledd.sock\"); s.sendall(b\"PING\\n\"); print(s.recv(64).decode(), end=\"\")'"
